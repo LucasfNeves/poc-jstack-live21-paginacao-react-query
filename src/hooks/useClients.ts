@@ -1,44 +1,26 @@
 import { ClientsService } from "@/services/ClientsService";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { usePagination } from "./usePagination";
 
 export function useClients(perPage: number = 10) {
-  const [currentPage, setCurrentPage] = useState(1);
+  const pagination = usePagination(1);
+
   const { data, isLoading } = useQuery({
     staleTime: 1000 * 60 * 5, // 5 minutes
-    queryKey: ["clients", { page: currentPage, perPage }],
-    queryFn: () => ClientsService.getAll(currentPage, perPage),
+    queryKey: ["clients", { page: pagination.currentPage, perPage }],
+    queryFn: async () => {
+      const response = await ClientsService.getAll(
+        pagination.currentPage,
+        perPage,
+      );
+      pagination.handleSetTotalItems(response.items);
+      return response;
+    },
   });
-
-  const totalPages = data ? Math.ceil(data.items / perPage) : 0;
-  const hasPreviousPage = currentPage > 1;
-  const hasNextPage = currentPage < totalPages;
-
-  function handleNextPage() {
-    if (!hasNextPage) return;
-    setCurrentPage((prev) => prev + 1);
-  }
-
-  function handlePrevPage() {
-    if (!hasPreviousPage) return;
-    setCurrentPage((prev) => prev - 1);
-  }
-
-  function handleSetPage(page: number) {
-    setCurrentPage(page);
-  }
 
   return {
     clients: data?.data || [],
     isLoading,
-    pagination: {
-      handleNextPage,
-      handlePrevPage,
-      handleSetPage,
-      totalPages,
-      currentPage,
-      hasNextPage,
-      hasPreviousPage,
-    },
+    pagination,
   };
 }
