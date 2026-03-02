@@ -2,6 +2,7 @@ import {
   Pagination,
   PaginationButton,
   PaginationContent,
+  PaginationEllipsis,
   PaginationItem,
   PaginationNext,
   PaginationPrevious,
@@ -17,9 +18,18 @@ import {
   TableRow,
 } from "@/components/ui/Table";
 import { useClients } from "@/hooks/useClients";
+import { generateElipsisPagination } from "@/lib/utils";
+import { useMemo } from "react";
 
 export function Clients() {
   const { clients, isLoading, pagination } = useClients();
+
+  const pages = useMemo(() => {
+    return generateElipsisPagination(
+      pagination.currentPage,
+      pagination.totalPages,
+    );
+  }, [pagination.currentPage, pagination.totalPages]);
 
   return (
     <div>
@@ -91,21 +101,29 @@ export function Clients() {
                   />
                 </PaginationItem>
 
-                {Array.from(
-                  {
-                    length: pagination.totalPages,
-                  },
-                  (_, index) => (
-                    <PaginationItem key={index}>
+                {pages.map((page) => {
+                  const isEllipsisPosition = typeof page === "string";
+                  if (isEllipsisPosition) {
+                    return (
+                      <PaginationItem key={page}>
+                        <PaginationButton disabled>
+                          <PaginationEllipsis />
+                        </PaginationButton>
+                      </PaginationItem>
+                    );
+                  }
+
+                  return (
+                    <PaginationItem key={page}>
                       <PaginationButton
-                        isActive={index + 1 === pagination.currentPage}
-                        onClick={() => pagination.handleSetPage(index + 1)}
+                        onClick={() => pagination.handleSetPage(page)}
+                        isActive={pagination.currentPage === page}
                       >
-                        {index + 1}
+                        {page}
                       </PaginationButton>
                     </PaginationItem>
-                  ),
-                )}
+                  );
+                })}
 
                 <PaginationItem>
                   <PaginationNext
